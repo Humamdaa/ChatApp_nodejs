@@ -28,7 +28,7 @@ const createChat = async (req, res) => {
 
 const findUserChat = async (req, res) => {
   const userId = req.params.userId;
-  console.log("id: ", userId);
+  console.log("User ID:", userId);
 
   try {
     // Find the chats where the user is a member
@@ -44,49 +44,54 @@ const findUserChat = async (req, res) => {
     // For each chat, manually populate the members with their names
     const populatedChats = await Promise.all(
       chats.map(async (chat) => {
-        // Fetch the user details for each member in the chat, except the current user
+        // Initialize an array to hold the combined userIds and members with their names
         const populatedMembers = await Promise.all(
           chat.members.map(async (memberId) => {
-            // Skip current user
+            // Skip the current user
             if (userId === memberId) {
-              return null; // Or you can return `"You"` to indicate the current user
+              return null; // Skip the current user, don't include them in the members list
             }
-
             const user = await User.findById(memberId).select("name");
-            return user ? user.name : "Unknown User"; // Return name or fallback to "Unknown User"
+            // Return an object with both 'name' and 'id' if the user is found
+            return user ? { name: user.name, id: user._id } : null;
           })
         );
 
-        // Remove null values (i.e., the current user) from the array of members
+        // Filter out null values (the current user) from the array of members
         const filteredMembers = populatedMembers.filter(
           (member) => member !== null
         );
 
-        // Return the chat data with populated member names (filtered to exclude the current user)
-        return { ...chat.toObject(), members: filteredMembers };
+        return {
+          _id: chat._id,
+          members: filteredMembers, // Members now contain both name and id
+        };
       })
     );
-
-    // Log the populated chats to verify the results
-    console.log("populated chats:", populatedChats);
-
-    // Send the populated chats with member names
-    res.status(200).send(populatedChats);
+    console.log("pop:", populatedChats);
+    // Send the populated chats with member names and userIds
+    res.status(200).send({ chats: populatedChats });
   } catch (error) {
     console.log(error);
-    res.status(500).send(error);
+    res.status(500).send(error); // Send error response in case of any issues
   }
 };
 
 const findChat = async (req, res) => {
-  const { firstId, secondId } = req.params;
+  let { firstId, secondId } = req.params;
+  if (secondId === "null") {
+    secondId = req.user.userId;
+    // console.log(secondId);
+  }
+
   try {
     const chat = await ChatModel.findOne({
       members: { $all: [firstId, secondId] },
     });
 
-    if (chat) res.status(200).send(chat);
-    else res.status(404).send(" chat is not found");
+    if (chat) {
+      res.status(200).send(chat);
+    } else res.status(404).send(" chat is not found");
   } catch (error) {
     console.log(error);
     res.status(500).send(error);
