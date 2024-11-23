@@ -68,7 +68,7 @@ const findUserChat = async (req, res) => {
         };
       })
     );
-    console.log("pop:", populatedChats);
+    // console.log("pop:", populatedChats);
     // Send the populated chats with member names and userIds
     res.status(200).send({ chats: populatedChats });
   } catch (error) {

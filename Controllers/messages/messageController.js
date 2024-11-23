@@ -3,16 +3,17 @@ const MessageModel = require("../../Models/MessageModel");
 // createMessage
 const createMessage = async (req, res) => {
   const { chatId, senderId, text } = req.body;
-  const message = new MessageModel({
+  const newMessage = new MessageModel({
     chatId,
     senderId,
     text,
   });
 
   try {
-    const savedMessage = await message.save();
+    const savedMessage = await newMessage.save();
     res.status(200).send(savedMessage);
   } catch (error) {
+    console.log(error);
     res.status(500).send({ message: "Failed to create message" });
   }
 };
@@ -23,9 +24,11 @@ const getMessages = async (req, res) => {
   const { chatId } = req.params;
   try {
     const messages = await MessageModel.find({ chatId }).sort({
-      createdAt: -1,
+      createdAt: 1,
     });
-    if (messages) {
+    // console.log("msgs:", messages);
+    if (messages && messages.length > 0) {
+      console.log(messages);
       res.status(200).send(messages);
     } else {
       res.status(404).send({ message: "No messages found" });
