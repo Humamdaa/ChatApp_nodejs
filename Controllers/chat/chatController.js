@@ -4,31 +4,36 @@
 
 const ChatModel = require("../../Models/ChatModel");
 const User = require("../../Models/UserModel");
+
 const createChat = async (req, res) => {
-  const { firstId, secondId } = req.body;
+  let { firstId, secondId } = req.body;
   try {
+    if (secondId === "null") {
+      secondId = req.user.userId;
+    }
+
     const chat = await ChatModel.findOne({
-      members: { $all: { firstId, secondId } },
+      members: { $all: [firstId, secondId] },
     });
 
+
     if (chat) {
-      res.status(200).send(chat);
+      return res.status(200).send({ message: flase });
     } else {
       const newChat = new ChatModel({
         members: [firstId, secondId],
       });
       const response = await newChat.save();
-      res.status(200).send(response);
+      return res.status(200).send({ message: true });
     }
   } catch (error) {
     console.log(error);
-    res.status(500).send(error);
+    return res.status(500).send(error);
   }
 };
 
 const findUserChat = async (req, res) => {
   const userId = req.params.userId;
-  console.log("User ID:", userId);
 
   try {
     // Find the chats where the user is a member
@@ -38,7 +43,7 @@ const findUserChat = async (req, res) => {
 
     // If no chats found, send an empty response
     if (chats.length === 0) {
-      return res.status(200).send("No chats found for this user.");
+      return res.status(200).send({ message: "No chats found for this user." });
     }
 
     // For each chat, manually populate the members with their names

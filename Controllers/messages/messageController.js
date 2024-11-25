@@ -11,6 +11,11 @@ const createMessage = async (req, res) => {
 
   try {
     const savedMessage = await newMessage.save();
+    // console.log(senderId);
+    // socket.io
+
+    req.io.to(chatId).emit("newMessage", savedMessage);
+
     res.status(200).send(savedMessage);
   } catch (error) {
     console.log(error);
@@ -19,7 +24,6 @@ const createMessage = async (req, res) => {
 };
 
 // getMessages
-
 const getMessages = async (req, res) => {
   const { chatId } = req.params;
   try {
